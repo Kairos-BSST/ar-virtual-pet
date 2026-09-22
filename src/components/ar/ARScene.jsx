@@ -7,6 +7,7 @@ import PlacementReticle from './PlacementReticle';
 import Companion from './Companion';
 import FoodLayer from './FoodLayer';
 import WorldLockedCamera from '../../hooks/useDeviceOrientation';
+import XRFloorSystem from './XRFloorSystem';
 
 export default function ARScene({ cameraPosRef }) {
   const { gl, camera, raycaster } = useThree();
@@ -16,40 +17,12 @@ export default function ARScene({ cameraPosRef }) {
   const seeThrough = arActive || worldCameraReady;
 
   useEffect(() => {
-    const session = gl.xr.getSession?.();
-    if (!session) return undefined;
-    const onSelect = () => {
-      const store = usePetStore.getState();
-      const hit = store.hitPose;
-      if (store.heldFood) {
-        if (hit) store.placeHeldFood(hit);
-        return;
-      }
-      if (store.isPlaced) return;
-      if (hit) {
-        store.placePet(hit);
-        return;
-      }
-      const pos = new THREE.Vector3();
-      const forward = new THREE.Vector3(0, 0, -1.4).applyQuaternion(camera.quaternion);
-      pos.copy(camera.position).add(forward);
-      pos.y = 0;
-      store.placePet([pos.x, 0, pos.z]);
-    };
-    session.addEventListener('select', onSelect);
-    return () => session.removeEventListener('select', onSelect);
-  }, [gl, camera, arActive]);
-
-  useEffect(() => {
+    if (arActive) return undefined;
     const el = gl.domElement;
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const hit = new THREE.Vector3();
     const onDown = (event) => {
       const store = usePetStore.getState();
-      if (store.hitPose && !store.isPlaced && !store.heldFood) {
-        store.placePet(store.hitPose);
-        return;
-      }
       const rect = el.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -67,10 +40,11 @@ export default function ARScene({ cameraPosRef }) {
     };
     el.addEventListener('pointerdown', onDown);
     return () => el.removeEventListener('pointerdown', onDown);
-  }, [camera, gl, raycaster, isPlaced]);
+  }, [camera, gl, raycaster, isPlaced, arActive]);
 
   return (
     <>
+      <XRFloorSystem />
       <WorldLockedCamera enabled={seeThrough && !arActive} />
       <hemisphereLight args={['#ffffff', '#3d2a1c', 1.1]} />
       <directionalLight position={[2, 4, 1]} intensity={1.15} />

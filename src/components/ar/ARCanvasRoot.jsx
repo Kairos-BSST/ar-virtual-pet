@@ -32,6 +32,12 @@ export default function ARCanvasRoot({ overlayRoot, cameraPosRef }) {
         gl.xr.enabled = true;
         gl.setClearColor(0x000000, 0);
         gl.setClearAlpha(0);
+        if (typeof gl.xr.setDepthSensing === 'function') {
+          gl.xr.setDepthSensing({
+            usagePreference: ['gpu-optimized', 'cpu-optimized'],
+            dataFormatPreference: ['luminance-alpha', 'float32'],
+          });
+        }
       }}
     >
       <AdaptiveDpr pixelated />

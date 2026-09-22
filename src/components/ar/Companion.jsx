@@ -5,18 +5,22 @@ import { usePetStore } from '../../store/petStore';
 import { DOG_SCALE, TAP_DISTANCE, WALK_SPEED, RUN_SPEED } from '../../utils/constants';
 import { damp, distance2d } from '../../utils/math';
 import { createPositionalVoice, playPositional } from '../../services/audioService';
+import { xrRuntime, FOOT_Y_EPSILON } from '../../services/xrRuntime';
 import DogModel from '../models/Dog';
 import { HeartBurst, EatSparks, Confetti } from '../models/Particles';
+
+const SCALE = DOG_SCALE * 2.4;
+const _world = new THREE.Vector3();
+const _anchorPos = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+const _scl = new THREE.Vector3();
 
 export default function Companion({ cameraPosRef }) {
   const group = useRef();
   const { camera, raycaster, gl } = useThree();
-  const voiceRef = useRef(null);
   const voice = useMemo(() => {
     try {
-      const created = createPositionalVoice(camera);
-      voiceRef.current = created;
-      return created;
+      return createPositionalVoice(camera);
     } catch {
       return null;
     }
@@ -31,6 +35,7 @@ export default function Companion({ cameraPosRef }) {
   const happiness = usePetStore((s) => s.happiness);
   const energy = usePetStore((s) => s.energy);
   const showLevelUp = usePetStore((s) => s.showLevelUp);
+  const arActive = usePetStore((s) => s.arActive);
 
   useEffect(() => {
     const node = group.current;
@@ -57,9 +62,20 @@ export default function Companion({ cameraPosRef }) {
     const dog = group.current;
     if (!dog || !store.isPlaced) return;
 
+    if (store.trackingLost) {
+      applyAnchorPose(dog, rotY.current);
+      return;
+    }
+
     if (store.hunger < 30 && performance.now() - lastWhine.current > 9000) {
       playPositional(voice, 'whine');
       lastWhine.current = performance.now();
+    }
+
+    if (arActive && xrRuntime.placed) {
+      updateAnchoredWalk(store, dt, rotY);
+      applyAnchorPose(dog, rotY.current);
+      return;
     }
 
     let [x, y, z] = store.petPosition;
@@ -86,8 +102,9 @@ export default function Companion({ cameraPosRef }) {
       }
     }
 
-    dog.position.set(store.petPosition[0], store.petPosition[1], store.petPosition[2]);
+    dog.position.set(store.petPosition[0], store.petPosition[1] + FOOT_Y_EPSILON, store.petPosition[2]);
     dog.rotation.y = store.petRotationY;
+    dog.scale.setScalar(SCALE);
   });
 
   useEffect(() => {
@@ -115,8 +132,8 @@ export default function Companion({ cameraPosRef }) {
   if (!isPlaced) return null;
 
   return (
-    <group ref={group} scale={DOG_SCALE * 2.4}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[1 / (DOG_SCALE * 2.4), 1, 1 / (DOG_SCALE * 2.4)]}>
+    <group ref={group} scale={SCALE}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[1 / SCALE, 1, 1 / SCALE]}>
         <circleGeometry args={[0.18, 20]} />
         <meshBasicMaterial color="#000000" transparent opacity={0.28} />
       </mesh>
@@ -126,4 +143,40 @@ export default function Companion({ cameraPosRef }) {
       <Confetti active={showLevelUp} />
     </group>
   );
+}
+
+function applyAnchorPose(dog, yaw) {
+  xrRuntime.hitMatrix.decompose(_anchorPos, _quat, _scl);
+  dog.position.set(
+    _anchorPos.x + xrRuntime.anchorOffset.x,
+    _anchorPos.y + FOOT_Y_EPSILON,
+    _anchorPos.z + xrRuntime.anchorOffset.z,
+  );
+  dog.quaternion.copy(_quat);
+  dog.rotateY(yaw);
+  dog.scale.setScalar(SCALE);
+}
+
+function updateAnchoredWalk(store, dt, rotY) {
+  if (!store.targetPosition) return;
+  const [tx, , tz] = store.targetPosition;
+  xrRuntime.hitMatrix.decompose(_anchorPos, _quat, _scl);
+  _world.set(
+    _anchorPos.x + xrRuntime.anchorOffset.x,
+    0,
+    _anchorPos.z + xrRuntime.anchorOffset.z,
+  );
+  const dist = distance2d(_world.x, _world.z, tx, tz);
+  const speed = store.moveGait === 'run' ? RUN_SPEED : WALK_SPEED;
+  if (dist < 0.12) {
+    const food = store.placedFoods.find((f) => distance2d(f.position[0], f.position[2], tx, tz) < 0.2);
+    if (food) store.consumeFood(food.instanceId);
+    else store.stopMoving();
+    return;
+  }
+  const nx = (tx - _world.x) / dist;
+  const nz = (tz - _world.z) / dist;
+  xrRuntime.anchorOffset.x += nx * speed * dt;
+  xrRuntime.anchorOffset.z += nz * speed * dt;
+  rotY.current = damp(rotY.current, Math.atan2(nx, nz), 8, dt);
 }

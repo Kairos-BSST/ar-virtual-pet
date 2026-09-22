@@ -12,7 +12,7 @@ export function usePetNeeds() {
       last = now;
       const store = usePetStore.getState();
       store.tickNeeds(dt);
-      if (!store.isPlaced || store.targetPosition || store.lockedAnimation) return;
+      if (!store.isPlaced || store.targetPosition || store.lockedAnimation || store.trackingLost) return;
       idleTimer -= dt;
       if (idleTimer <= 0) {
         const next = pickIdleBehavior(store.hunger, store.energy);

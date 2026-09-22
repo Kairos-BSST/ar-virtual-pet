@@ -3,6 +3,7 @@ import TopBar from '../components/ui/TopBar';
 import BottomPanel from '../components/ui/BottomPanel';
 import LevelUpOverlay from '../components/ui/LevelUpOverlay';
 import PlacementHint from '../components/ui/PlacementHint';
+import TrackingOverlay from '../components/ui/TrackingOverlay';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { useVoiceCommands } from '../hooks/useVoiceCommands';
 import { usePetNeeds } from '../hooks/usePetNeeds';
@@ -50,6 +51,7 @@ export default function ARExperience() {
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between">
         <TopBar />
         <PlacementHint worldReady={worldReady} worldCamError={worldCamError} />
+        <TrackingOverlay />
         <div>
           <div className="pointer-events-auto mx-3 mb-2 flex items-end justify-between">
             <video

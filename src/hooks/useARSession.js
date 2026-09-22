@@ -1,30 +1,36 @@
 import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
 import { usePetStore } from '../store/petStore';
+
+const DEPTH = {
+  usagePreference: ['gpu-optimized', 'cpu-optimized'],
+  dataFormatPreference: ['luminance-alpha', 'float32'],
+};
 
 const SESSION_ATTEMPTS = (overlay) => [
   {
-    requiredFeatures: ['hit-test', 'local-floor'],
-    optionalFeatures: overlay ? ['dom-overlay', 'light-estimation'] : ['light-estimation'],
+    requiredFeatures: ['hit-test', 'anchors'],
+    optionalFeatures: overlay
+      ? ['plane-detection', 'depth-sensing', 'dom-overlay', 'light-estimation', 'local-floor']
+      : ['plane-detection', 'depth-sensing', 'light-estimation', 'local-floor'],
+    ...(overlay ? { domOverlay: { root: overlay } } : {}),
+    depthSensing: DEPTH,
+  },
+  {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: overlay
+      ? ['anchors', 'plane-detection', 'depth-sensing', 'dom-overlay', 'light-estimation']
+      : ['anchors', 'plane-detection', 'depth-sensing', 'light-estimation'],
+    ...(overlay ? { domOverlay: { root: overlay } } : {}),
+    depthSensing: DEPTH,
+  },
+  {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: overlay ? ['anchors', 'dom-overlay'] : ['anchors'],
     ...(overlay ? { domOverlay: { root: overlay } } : {}),
   },
   {
     requiredFeatures: ['hit-test'],
-    optionalFeatures: overlay ? ['dom-overlay', 'local-floor'] : ['local-floor'],
-    ...(overlay ? { domOverlay: { root: overlay } } : {}),
   },
-  {
-    requiredFeatures: ['hit-test'],
-    optionalFeatures: ['local-floor'],
-  },
-  {
-    requiredFeatures: ['local-floor'],
-    optionalFeatures: ['hit-test'],
-  },
-  {
-    optionalFeatures: ['hit-test', 'local-floor'],
-  },
-  {},
 ];
 
 export async function startImmersiveAR(gl, overlayRoot) {
@@ -59,16 +65,14 @@ export function useARSession(gl, overlayRoot) {
     if (!gl) return undefined;
     gl.xr.enabled = true;
 
-    const navigatorXR = navigator.xr;
-    if (navigatorXR?.isSessionSupported) {
-      navigatorXR.isSessionSupported('immersive-ar').then((ok) => {
-        usePetStore.getState().setArSupported(Boolean(ok));
-      });
-    }
+    navigator.xr?.isSessionSupported?.('immersive-ar').then((ok) => {
+      usePetStore.getState().setArSupported(Boolean(ok));
+    });
 
-    const onStart = () => usePetStore.getState().setArActive(true);
+    const onStart = () => usePetStore.getState().enterAr();
     const onEnd = () => {
       usePetStore.getState().setArActive(false);
+      usePetStore.getState().setTrackingLost(false);
       if (buttonRef.current) buttonRef.current.textContent = 'START AR';
     };
     gl.xr.addEventListener('sessionstart', onStart);
@@ -92,9 +96,7 @@ export function useARSession(gl, overlayRoot) {
         button.textContent = 'EXIT AR';
       } catch (err) {
         button.textContent = 'START AR';
-        usePetStore.getState().setVoiceFeedback(
-          err?.message || 'AR session not supported — using world-lock camera',
-        );
+        usePetStore.getState().setVoiceFeedback(err?.message || 'AR is not supported on this device');
       }
     };
     mount?.appendChild(button);
@@ -108,14 +110,4 @@ export function useARSession(gl, overlayRoot) {
   }, [gl, overlayRoot]);
 
   return buttonRef;
-}
-
-export function createReticle() {
-  const ring = new THREE.RingGeometry(0.08, 0.1, 32);
-  ring.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x9be7ff, opacity: 0.85, transparent: true });
-  const mesh = new THREE.Mesh(ring, mat);
-  mesh.matrixAutoUpdate = false;
-  mesh.visible = false;
-  return mesh;
 }
