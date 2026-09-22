@@ -7,6 +7,7 @@ import { useHandTracking } from '../hooks/useHandTracking';
 import { useVoiceCommands } from '../hooks/useVoiceCommands';
 import { usePetNeeds } from '../hooks/usePetNeeds';
 import { useWorldCamera } from '../hooks/useWorldCamera';
+import { requestMotionPermission } from '../hooks/useDeviceOrientation';
 import { usePetStore } from '../store/petStore';
 
 const ARCanvasRoot = lazy(() => import('../components/ar/ARCanvasRoot'));
@@ -26,6 +27,9 @@ export default function ARExperience() {
       id="ar-overlay"
       ref={setOverlayEl}
       className="relative h-[100dvh] w-full overflow-hidden bg-transparent"
+      onPointerDown={() => {
+        requestMotionPermission().catch(() => {});
+      }}
     >
       <video
         ref={worldVideoRef}

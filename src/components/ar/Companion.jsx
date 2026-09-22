@@ -116,6 +116,10 @@ export default function Companion({ cameraPosRef }) {
 
   return (
     <group ref={group} scale={DOG_SCALE * 2.4}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[1 / (DOG_SCALE * 2.4), 1, 1 / (DOG_SCALE * 2.4)]}>
+        <circleGeometry args={[0.18, 20]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.28} />
+      </mesh>
       <DogModel animation={animation} happiness={happiness} hunger={hunger} energy={energy} />
       <HeartBurst active={hearts} />
       <EatSparks active={animation === 'eat'} />

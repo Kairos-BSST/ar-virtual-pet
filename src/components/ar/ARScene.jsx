@@ -6,6 +6,7 @@ import { usePetStore } from '../../store/petStore';
 import PlacementReticle from './PlacementReticle';
 import Companion from './Companion';
 import FoodLayer from './FoodLayer';
+import WorldLockedCamera from '../../hooks/useDeviceOrientation';
 
 export default function ARScene({ cameraPosRef }) {
   const { gl, camera, raycaster } = useThree();
@@ -19,16 +20,18 @@ export default function ARScene({ cameraPosRef }) {
     if (!session) return undefined;
     const onSelect = () => {
       const store = usePetStore.getState();
+      const hit = store.hitPose;
       if (store.heldFood) {
-        const origin = new THREE.Vector3();
-        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        origin.copy(camera.position).add(dir.multiplyScalar(0.8));
-        store.placeHeldFood([origin.x, 0, origin.z]);
+        if (hit) store.placeHeldFood(hit);
         return;
       }
       if (store.isPlaced) return;
+      if (hit) {
+        store.placePet(hit);
+        return;
+      }
       const pos = new THREE.Vector3();
-      const forward = new THREE.Vector3(0, 0, -1.2).applyQuaternion(camera.quaternion);
+      const forward = new THREE.Vector3(0, 0, -1.4).applyQuaternion(camera.quaternion);
       pos.copy(camera.position).add(forward);
       pos.y = 0;
       store.placePet([pos.x, 0, pos.z]);
@@ -43,6 +46,10 @@ export default function ARScene({ cameraPosRef }) {
     const hit = new THREE.Vector3();
     const onDown = (event) => {
       const store = usePetStore.getState();
+      if (store.hitPose && !store.isPlaced && !store.heldFood) {
+        store.placePet(store.hitPose);
+        return;
+      }
       const rect = el.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -51,11 +58,12 @@ export default function ARScene({ cameraPosRef }) {
       raycaster.setFromCamera(ndc, camera);
       const onFloor = raycaster.ray.intersectPlane(plane, hit);
       if (!onFloor) return;
+      const point = [hit.x, 0, hit.z];
       if (store.heldFood) {
-        store.placeHeldFood([hit.x, 0, hit.z]);
+        store.placeHeldFood(point);
         return;
       }
-      if (!store.isPlaced) store.placePet([hit.x, 0, hit.z]);
+      if (!store.isPlaced) store.placePet(point);
     };
     el.addEventListener('pointerdown', onDown);
     return () => el.removeEventListener('pointerdown', onDown);
@@ -63,9 +71,10 @@ export default function ARScene({ cameraPosRef }) {
 
   return (
     <>
+      <WorldLockedCamera enabled={seeThrough && !arActive} />
       <hemisphereLight args={['#ffffff', '#3d2a1c', 1.1]} />
       <directionalLight position={[2, 4, 1]} intensity={1.15} />
-      <ambientLight intensity={0.35} />
+      <ambientLight intensity={1.1} />
       {!seeThrough && <DesktopWorld />}
       <PlacementReticle />
       <Companion cameraPosRef={cameraPosRef} />

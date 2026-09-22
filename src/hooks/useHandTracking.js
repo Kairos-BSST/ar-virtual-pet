@@ -16,7 +16,11 @@ export function useHandTracking(enabled) {
   const cameraPosRef = useRef([0, 0, 0]);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled) {
+      setError(null);
+      setActive(false);
+      return undefined;
+    }
     let cancelled = false;
     let landmarker;
     let stream;

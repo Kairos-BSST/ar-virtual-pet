@@ -27,7 +27,7 @@ export default function ARCanvasRoot({ overlayRoot, cameraPosRef }) {
       style={{ background: 'transparent' }}
       dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      camera={{ fov: 60, near: 0.01, far: 40, position: [0, 1.4, 2.2] }}
+      camera={{ fov: 70, near: 0.01, far: 40, position: [0, 1.5, 0] }}
       onCreated={({ gl }) => {
         gl.xr.enabled = true;
         gl.setClearColor(0x000000, 0);
