@@ -10,6 +10,7 @@ import {
   poseNormalY,
   matrixFromXRPose,
   createFloorAnchor,
+  lockPlacementPose,
 } from '../../services/xrRuntime';
 
 export default function XRFloorSystem() {
@@ -20,6 +21,7 @@ export default function XRFloorSystem() {
   useEffect(() => {
     if (!arActive) {
       resetXrRuntime();
+      usePetStore.getState().setFloorScan({ ready: false, planeCount: 0, message: '' });
       return undefined;
     }
 
@@ -47,12 +49,14 @@ export default function XRFloorSystem() {
         const space = gl.xr.getReferenceSpace() || xrRuntime.referenceSpace;
         const anchor = await createFloorAnchor(active, hitResult, matrix, space);
         xrRuntime.anchor = anchor;
-        xrRuntime.anchorOffset.set(0, 0, 0);
-        xrRuntime.placed = true;
+        lockPlacementPose(matrix, position);
         store.placePet([position.x, position.y, position.z]);
-        store.setVoiceFeedback('');
+        store.setVoiceFeedback(anchor ? 'Dog anchored to the floor' : 'Dog locked to floor plane');
+        store.setFloorScan({ ready: true, planeCount: xrRuntime.planeCount, message: 'Anchored' });
       } catch {
-        usePetStore.getState().setVoiceFeedback('Could not anchor. Keep the floor in view and tap again.');
+        lockPlacementPose(matrix, position);
+        store.placePet([position.x, position.y, position.z]);
+        store.setVoiceFeedback('Dog locked to detected floor');
       } finally {
         placing.current = false;
       }
@@ -71,10 +75,27 @@ export default function XRFloorSystem() {
             entityTypes: ['plane'],
           });
         } catch {
-          xrRuntime.hitSource = await xrSession.requestHitTestSource(options);
+          try {
+            xrRuntime.hitSource = await xrSession.requestHitTestSource({
+              ...options,
+              entityTypes: ['plane', 'mesh'],
+            });
+          } catch {
+            xrRuntime.hitSource = await xrSession.requestHitTestSource(options);
+          }
         }
+        usePetStore.getState().setFloorScan({
+          ready: false,
+          planeCount: 0,
+          message: 'Scan the floor slowly…',
+        });
       } catch {
         xrRuntime.hitSource = null;
+        usePetStore.getState().setFloorScan({
+          ready: false,
+          planeCount: 0,
+          message: 'Hit-test unavailable on this device',
+        });
       }
     };
 
@@ -92,6 +113,7 @@ export default function XRFloorSystem() {
     const onEnd = () => {
       resetXrRuntime();
       usePetStore.getState().setTrackingLost(false);
+      usePetStore.getState().setFloorScan({ ready: false, planeCount: 0, message: '' });
     };
     gl.xr.addEventListener('sessionend', onEnd);
 
@@ -122,6 +144,7 @@ export default function XRFloorSystem() {
     }
 
     const planes = collectPlanes(frame, space);
+    xrRuntime.planeCount = planes.length;
     const floor = selectFloorPlane(planes);
     if (floor) {
       xrRuntime.floorY = floor.y;
@@ -140,7 +163,7 @@ export default function XRFloorSystem() {
           if (!pose) continue;
           const normalY = poseNormalY(pose);
           const y = pose.transform.position.y;
-          if (normalY >= 0.92) {
+          if (normalY >= 0.9) {
             xrRuntime.floorY = xrRuntime.floorY == null ? y : Math.min(xrRuntime.floorY, y);
           }
           if (
@@ -162,16 +185,28 @@ export default function XRFloorSystem() {
           }
         }
       }
-    }
 
-    if (store.isPlaced && xrRuntime.anchor) {
+      store.setFloorScan({
+        ready: xrRuntime.hitValid,
+        planeCount: xrRuntime.planeCount,
+        message: xrRuntime.hitValid
+          ? 'Floor found — tap to place'
+          : xrRuntime.planesReady
+            ? 'Aim at the lowest floor surface'
+            : 'Move phone to detect floor',
+      });
+    } else if (xrRuntime.anchor) {
       const pose = frame.getPose(xrRuntime.anchor.anchorSpace, space);
       if (!pose) {
         setTracking(false, store);
         return;
       }
-      matrixFromXRPose(pose, xrRuntime.hitMatrix);
+      matrixFromXRPose(pose, xrRuntime.placementMatrix);
+      xrRuntime.hitMatrix.copy(xrRuntime.placementMatrix);
+    } else if (xrRuntime.placed) {
+      xrRuntime.hitMatrix.copy(xrRuntime.placementMatrix);
     }
+
     setTracking(true, store);
   });
 

@@ -25,10 +25,5 @@ export async function loadOptionalModel(kind) {
 }
 
 export function preloadCoreAssets() {
-  return Promise.all([
-    loadOptionalModel('dog'),
-    loadOptionalModel('bone'),
-    loadOptionalModel('chicken'),
-    loadOptionalModel('biscuit'),
-  ]);
+  return Promise.all([loadOptionalModel('dog')]);
 }

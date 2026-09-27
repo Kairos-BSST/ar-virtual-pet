@@ -90,7 +90,7 @@ export const MODEL_PATHS = {
   biscuit: '/models/biscuit.glb',
 };
 
-export const DOG_SCALE = 0.35;
+export const DOG_SCALE = 1;
 export const WALK_SPEED = 0.85;
 export const RUN_SPEED = 1.7;
 export const TAP_DISTANCE = 0.55;

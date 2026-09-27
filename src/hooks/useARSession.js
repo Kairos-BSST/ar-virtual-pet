@@ -6,6 +6,7 @@ const DEPTH = {
   dataFormatPreference: ['luminance-alpha', 'float32'],
 };
 
+/** Markerless WebAR: hit-test + optional plane-detection / anchors / depth. */
 const SESSION_ATTEMPTS = (overlay) => [
   {
     requiredFeatures: ['hit-test', 'anchors'],
@@ -18,18 +19,20 @@ const SESSION_ATTEMPTS = (overlay) => [
   {
     requiredFeatures: ['hit-test'],
     optionalFeatures: overlay
-      ? ['anchors', 'plane-detection', 'depth-sensing', 'dom-overlay', 'light-estimation']
-      : ['anchors', 'plane-detection', 'depth-sensing', 'light-estimation'],
+      ? ['anchors', 'plane-detection', 'depth-sensing', 'dom-overlay', 'light-estimation', 'local-floor']
+      : ['anchors', 'plane-detection', 'depth-sensing', 'light-estimation', 'local-floor'],
     ...(overlay ? { domOverlay: { root: overlay } } : {}),
     depthSensing: DEPTH,
   },
   {
     requiredFeatures: ['hit-test'],
-    optionalFeatures: overlay ? ['anchors', 'dom-overlay'] : ['anchors'],
+    optionalFeatures: overlay ? ['anchors', 'plane-detection', 'dom-overlay'] : ['anchors', 'plane-detection'],
     ...(overlay ? { domOverlay: { root: overlay } } : {}),
   },
   {
     requiredFeatures: ['hit-test'],
+    optionalFeatures: overlay ? ['dom-overlay'] : [],
+    ...(overlay ? { domOverlay: { root: overlay } } : {}),
   },
 ];
 
@@ -38,7 +41,7 @@ export async function startImmersiveAR(gl, overlayRoot) {
   if (gl.xr.getSession()) return gl.xr.getSession();
 
   const overlay = overlayRoot ?? document.getElementById('ar-overlay');
-  let lastError = new Error('Could not start AR');
+  let lastError = new Error('Could not start markerless AR');
 
   try {
     gl.xr.setReferenceSpaceType('local-floor');
@@ -73,6 +76,7 @@ export function useARSession(gl, overlayRoot) {
     const onEnd = () => {
       usePetStore.getState().setArActive(false);
       usePetStore.getState().setTrackingLost(false);
+      usePetStore.getState().setFloorScan({ ready: false, planeCount: 0, message: '' });
       if (buttonRef.current) buttonRef.current.textContent = 'START AR';
     };
     gl.xr.addEventListener('sessionstart', onStart);
@@ -96,7 +100,9 @@ export function useARSession(gl, overlayRoot) {
         button.textContent = 'EXIT AR';
       } catch (err) {
         button.textContent = 'START AR';
-        usePetStore.getState().setVoiceFeedback(err?.message || 'AR is not supported on this device');
+        usePetStore.getState().setVoiceFeedback(
+          err?.message || 'Markerless AR needs Chrome on Android with ARCore',
+        );
       }
     };
     mount?.appendChild(button);

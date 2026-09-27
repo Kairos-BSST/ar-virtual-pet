@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { usePetStore } from '../../store/petStore';
-import { DOG_SCALE, TAP_DISTANCE, WALK_SPEED, RUN_SPEED } from '../../utils/constants';
+import { TAP_DISTANCE, WALK_SPEED, RUN_SPEED } from '../../utils/constants';
 import { damp, distance2d } from '../../utils/math';
 import { createPositionalVoice, playPositional } from '../../services/audioService';
 import { xrRuntime, FOOT_Y_EPSILON } from '../../services/xrRuntime';
 import DogModel from '../models/Dog';
 import { HeartBurst, EatSparks, Confetti } from '../models/Particles';
 
-const SCALE = DOG_SCALE * 2.4;
+const SCALE = 1;
 const _world = new THREE.Vector3();
 const _anchorPos = new THREE.Vector3();
 const _quat = new THREE.Quaternion();
@@ -146,7 +146,7 @@ export default function Companion({ cameraPosRef }) {
 }
 
 function applyAnchorPose(dog, yaw) {
-  xrRuntime.hitMatrix.decompose(_anchorPos, _quat, _scl);
+  xrRuntime.placementMatrix.decompose(_anchorPos, _quat, _scl);
   dog.position.set(
     _anchorPos.x + xrRuntime.anchorOffset.x,
     _anchorPos.y + FOOT_Y_EPSILON,
@@ -160,7 +160,7 @@ function applyAnchorPose(dog, yaw) {
 function updateAnchoredWalk(store, dt, rotY) {
   if (!store.targetPosition) return;
   const [tx, , tz] = store.targetPosition;
-  xrRuntime.hitMatrix.decompose(_anchorPos, _quat, _scl);
+  xrRuntime.placementMatrix.decompose(_anchorPos, _quat, _scl);
   _world.set(
     _anchorPos.x + xrRuntime.anchorOffset.x,
     0,

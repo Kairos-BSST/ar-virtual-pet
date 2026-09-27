@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
-export const MIN_FLOOR_AREA = 1;
-export const MIN_NORMAL_Y = 0.92;
-export const MAX_HEIGHT_ABOVE_FLOOR = 0.18;
+export const MIN_FLOOR_AREA = 0.6;
+export const MIN_NORMAL_Y = 0.9;
+export const MAX_HEIGHT_ABOVE_FLOOR = 0.16;
 export const FOOT_Y_EPSILON = 0.002;
 
 const FLOOR_LABELS = new Set(['floor', 'ground', 'level', 'indoor-floor']);
@@ -39,9 +39,11 @@ export const xrRuntime = {
   hitValid: false,
   hitMatrix: new THREE.Matrix4(),
   hitPosition: new THREE.Vector3(),
+  placementMatrix: new THREE.Matrix4(),
   floorY: null,
   floorArea: 0,
   planesReady: false,
+  planeCount: 0,
   anchor: null,
   anchorOffset: new THREE.Vector3(),
   tracking: true,
@@ -59,10 +61,14 @@ export function resetXrRuntime() {
   xrRuntime.floorY = null;
   xrRuntime.floorArea = 0;
   xrRuntime.planesReady = false;
+  xrRuntime.planeCount = 0;
   xrRuntime.anchor = null;
   xrRuntime.anchorOffset.set(0, 0, 0);
   xrRuntime.tracking = true;
   xrRuntime.placed = false;
+  xrRuntime.hitMatrix.identity();
+  xrRuntime.placementMatrix.identity();
+  xrRuntime.hitPosition.set(0, 0, 0);
 }
 
 export function polygonArea(points) {
@@ -104,7 +110,7 @@ export function selectFloorPlane(planes) {
   if (!pool.length) return null;
   const lowest = Math.min(...pool.map((p) => p.y));
   const nearLowest = pool.filter((p) => p.y <= lowest + MAX_HEIGHT_ABOVE_FLOOR);
-  nearLowest.sort((a, b) => b.area - a.area);
+  nearLowest.sort((a, b) => b.area - a.area || a.y - b.y);
   return nearLowest[0];
 }
 
@@ -112,17 +118,15 @@ export function isGeometricFloorCandidate(plane) {
   if (REJECT_LABELS.has(plane.semantic)) return false;
   if (plane.orientation === 'vertical') return false;
   if (plane.normalY < MIN_NORMAL_Y) return false;
-  if (plane.area < MIN_FLOOR_AREA) return false;
+  if (plane.area > 0 && plane.area < MIN_FLOOR_AREA) return false;
   return true;
 }
 
 export function isValidFloorHit({ positionY, normalY, floorY }) {
   if (normalY < MIN_NORMAL_Y) return false;
-  if (floorY == null) {
-    return normalY >= MIN_NORMAL_Y;
-  }
+  if (floorY == null) return true;
   if (positionY > floorY + MAX_HEIGHT_ABOVE_FLOOR) return false;
-  if (positionY < floorY - 0.25) return false;
+  if (positionY < floorY - 0.3) return false;
   return true;
 }
 
@@ -153,8 +157,21 @@ export async function createFloorAnchor(session, hitResult, matrix, referenceSpa
       /* fall through */
     }
   }
-  if (session.requestAnchor) {
-    return session.requestAnchor(xrTransformFromMatrix(matrix), referenceSpace);
+  if (typeof session?.requestAnchor === 'function') {
+    try {
+      return await session.requestAnchor(xrTransformFromMatrix(matrix), referenceSpace);
+    } catch {
+      return null;
+    }
   }
   return null;
+}
+
+/** Soft world lock when Anchors API is unavailable: freeze pose in reference space. */
+export function lockPlacementPose(matrix, position) {
+  xrRuntime.placementMatrix.copy(matrix);
+  xrRuntime.hitMatrix.copy(matrix);
+  xrRuntime.hitPosition.copy(position);
+  xrRuntime.anchorOffset.set(0, 0, 0);
+  xrRuntime.placed = true;
 }
