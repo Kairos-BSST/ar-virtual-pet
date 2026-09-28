@@ -1,49 +1,148 @@
-# AR Pet Companion
+# 🐶 Kairos AR Companion
 
-A mobile-first WebAR virtual dog. Place a companion on a real surface, then feed, pet, talk, and gesture.
+An Augmented Reality (AR) Virtual Pet application that allows users to place, interact with, and experience a realistic 3D dog companion in the real world using WebXR and Three.js.
 
-## Stack
+## 🚀 Overview
 
-- React + Vite
-- React Three Fiber / Three.js / WebXR (`ARButton` + hit-test)
-- Tailwind CSS
-- Zustand
-- MediaPipe Hands
-- TensorFlow.js gesture scoring
-- Web Speech API
+Kairos AR Companion combines Augmented Reality, 3D graphics, and modern web technologies to create an immersive virtual pet experience. Users can place a 3D dog model on detected surfaces and interact with it naturally through their mobile device.
 
-## Run
+---
+
+## ✨ Features
+
+- 🐕 Realistic 3D Dog Model
+- 📱 Mobile WebXR Support
+- 🌍 Real-World Surface Detection
+- 🎯 AR Hit Testing & Anchoring
+- 🌑 Dynamic Shadow Rendering
+- 🖐️ Interactive AR Experience
+- 📐 Automatic Ground Placement
+- ⚡ Fast and Responsive UI
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- React.js
+- Vite
+
+### AR & 3D
+- Three.js
+- React Three Fiber
+- React Three Drei
+- WebXR
+
+### Deployment
+- Vercel
+
+---
+
+## 📂 Project Structure
+
+```bash
+kairos-ar-companion/
+│
+├── public/
+│   ├── dog.glb
+│   └── assets/
+│
+├── src/
+│   ├── components/
+│   │   ├── Dog.jsx
+│   │   ├── ARScene.jsx
+│   │   └── Ground.jsx
+│   │
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── package.json
+├── vite.config.js
+└── README.md
+```
+
+---
+
+## ⚙️ Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/Kairos-BSST/<repository-name>.git
+cd <repository-name>
+```
+
+### Install Dependencies
 
 ```bash
 npm install
+```
+
+### Run Development Server
+
+```bash
 npm run dev
 ```
 
-Open the HTTPS URL on your phone (same Wi-Fi). Accept the certificate warning if the dev SSL cert is self-signed.
+### Build for Production
 
-Chrome on Android is required for `immersive-ar`. Desktop Chrome still runs a floor preview so you can test feeding, tap, voice, and gestures without a headset.
+```bash
+npm run build
+```
 
-## How to use
+### Preview Production Build
 
-1. Allow camera (hands) and microphone (voice) when prompted.
-2. Tap **Start AR** on a compatible device, scan a floor, then tap to spawn the dog.
-3. On desktop, tap the dark floor plane to spawn.
-4. **Feed** — pick Bone / Chicken / Biscuit, tap Feed, then tap the floor. The dog walks over and eats.
-5. **Tap the dog** — tail wag, hearts, occasional bark.
-6. **Voice** — Bark, Sit, Jump, Dance, Come here, Run, Stop, Eat.
-7. **Hands** — Open palm (come), point left/right, thumbs up (jump), raised hand (sit), fist (stop).
+```bash
+npm run preview
+```
 
-## Optional GLB assets
+---
 
-Place files in `public/models/`:
+## 📱 How It Works
 
-- `dog.glb` (clips: idle, walk, run, sit, jump, bark, eat, tailWag)
-- `bone.glb`, `chicken.glb`, `biscuit.glb`
+1. Open the application on a WebXR-compatible device.
+2. Grant camera permissions.
+3. Scan the environment to detect horizontal surfaces.
+4. Tap on a detected surface.
+5. The virtual dog appears anchored to the real-world floor.
+6. Move around and interact with your AR companion.
 
-If they are missing, the app uses a built-in low-poly dog and treat meshes so `npm run dev` still works.
+---
 
-## Production notes
+## 🎯 Future Enhancements
 
-- Serve over HTTPS.
-- Target 60 FPS: DPR is capped, assets lazy-load, animations are clip-driven.
-- WebXR hit-test anchors the pet on the detected plane; desktop uses a y=0 floor.
+- Voice Commands
+- AI-Based Pet Interaction
+- Pet Animations
+- Feeding System
+- Gesture Recognition
+- Multiplayer AR Experience
+- Virtual Pet Customization
+
+---
+
+## 🌐 Browser Support
+
+| Browser | Support |
+|----------|----------|
+| Chrome Android | ✅ |
+| Edge Android | ✅ |
+| Samsung Internet | ✅ |
+| Safari iOS | Limited |
+| Desktop Browsers | Partial |
+
+---
+
+## 👥 Team Kairos
+
+Developed by **Team Kairos** to explore the possibilities of Augmented Reality and immersive digital experiences.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+⭐ If you found this project useful, consider giving it a star on GitHub.
