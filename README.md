@@ -68,8 +68,8 @@ kairos-ar-companion/
 ### Clone Repository
 
 ```bash
-git clone https://github.com/Kairos-BSST/<repository-name>.git
-cd <repository-name>
+[git clone https://github.com/Kairos-BSST/<repository-name>.git](https://github.com/Kairos-BSST/ar-virtual-pet.git)
+cd ar-virtual-pet
 ```
 
 ### Install Dependencies
@@ -133,9 +133,13 @@ npm run preview
 
 ---
 
-## 👥 Team Kairos
+## 👥 Collaborators
 
 Developed by **Team Kairos** to explore the possibilities of Augmented Reality and immersive digital experiences.
+- Trisha Deshmukh
+- Bliss Gonsalves
+- Sanika Mane
+- Shravani Joshi
 
 ---
 
