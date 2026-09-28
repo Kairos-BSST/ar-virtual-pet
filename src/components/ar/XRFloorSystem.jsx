@@ -50,11 +50,16 @@ export default function XRFloorSystem() {
         const anchor = await createFloorAnchor(active, hitResult, matrix, space);
         xrRuntime.anchor = anchor;
         lockPlacementPose(matrix, position);
+        // Snap floor height from hit so feet sit on the invisible ground
+        xrRuntime.floorY = position.y;
+        xrRuntime.groundY = position.y;
         store.placePet([position.x, position.y, position.z]);
         store.setVoiceFeedback(anchor ? 'Dog anchored to the floor' : 'Dog locked to floor plane');
         store.setFloorScan({ ready: true, planeCount: xrRuntime.planeCount, message: 'Anchored' });
       } catch {
         lockPlacementPose(matrix, position);
+        xrRuntime.floorY = position.y;
+        xrRuntime.groundY = position.y;
         store.placePet([position.x, position.y, position.z]);
         store.setVoiceFeedback('Dog locked to detected floor');
       } finally {
@@ -87,14 +92,14 @@ export default function XRFloorSystem() {
         usePetStore.getState().setFloorScan({
           ready: false,
           planeCount: 0,
-          message: 'Scan the floor slowly…',
+          message: 'Move your device to detect the floor.',
         });
       } catch {
         xrRuntime.hitSource = null;
         usePetStore.getState().setFloorScan({
           ready: false,
           planeCount: 0,
-          message: 'Hit-test unavailable on this device',
+          message: 'Move your device to detect the floor.',
         });
       }
     };
@@ -191,9 +196,7 @@ export default function XRFloorSystem() {
         planeCount: xrRuntime.planeCount,
         message: xrRuntime.hitValid
           ? 'Floor found — tap to place'
-          : xrRuntime.planesReady
-            ? 'Aim at the lowest floor surface'
-            : 'Move phone to detect floor',
+          : 'Move your device to detect the floor.',
       });
     } else if (xrRuntime.anchor) {
       const pose = frame.getPose(xrRuntime.anchor.anchorSpace, space);

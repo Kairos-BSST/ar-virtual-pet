@@ -13,32 +13,29 @@ export default function PlacementHint({ worldReady, worldCamError }) {
     return (
       <div className="pointer-events-none absolute inset-x-0 top-28 px-6 text-center">
         <p className="glass inline-block rounded-full px-4 py-2 text-xs text-white/90">
-          Markerless AR: dog is world-anchored to the floor. Move freely.
+          Dog is on the floor. Move around — it stays anchored.
         </p>
       </div>
     );
   }
 
-  let message = 'Tap START AR for markerless floor placement';
+  let message = 'Tap START AR, then scan the floor';
   if (arActive) {
-    message = floorScan?.message || 'Scan the real floor until a green ring appears, then tap once';
+    message = floorScan?.message || 'Move your device to detect the floor.';
   } else if (worldCamError) {
     message = 'Allow camera, then tap START AR';
   } else if (worldReady) {
-    message = 'Tap START AR — no markers needed. Scan floor, then tap the ring.';
+    message = 'Tap START AR — scan floor until the ring appears, then tap once';
   }
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-8 px-6 text-center">
       <p className="glass inline-block rounded-full px-4 py-2 text-sm text-white">{message}</p>
-      {arActive && (
-        <p className="mt-2 text-xs text-white/75">
-          Floor planes: {floorScan?.planeCount ?? 0}
-          {floorScan?.ready ? ' · ready to place' : ''}
-        </p>
+      {arActive && !floorScan?.ready && (
+        <p className="mt-2 text-xs text-amber-100/90">Move your device to detect the floor.</p>
       )}
       {arSupported && !arActive && (
-        <p className="mt-2 text-xs text-white/80">Uses WebXR hit-test + floor detection (no QR / image markers).</p>
+        <p className="mt-2 text-xs text-white/80">Invisible ground + shadows — like Google AR animals.</p>
       )}
     </div>
   );

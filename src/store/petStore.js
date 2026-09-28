@@ -48,7 +48,7 @@ export const usePetStore = create((set, get) => ({
       targetPosition: null,
       heldFood: null,
       placedFoods: [],
-      floorScan: { ready: false, planeCount: 0, message: 'Scan the floor slowly…' },
+      floorScan: { ready: false, planeCount: 0, message: 'Move your device to detect the floor.' },
     }),
   setWorldCameraReady: (worldCameraReady) => set({ worldCameraReady }),
   setHitPose: (hitPose) => set({ hitPose }),

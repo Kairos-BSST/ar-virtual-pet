@@ -23,6 +23,7 @@ export default function ARCanvasRoot({ overlayRoot, cameraPosRef }) {
 
   return (
     <Canvas
+      shadows
       className="h-full w-full bg-transparent"
       style={{ background: 'transparent' }}
       dpr={[1, 1.5]}
@@ -30,6 +31,7 @@ export default function ARCanvasRoot({ overlayRoot, cameraPosRef }) {
       camera={{ fov: 70, near: 0.01, far: 40, position: [0, 1.5, 0] }}
       onCreated={({ gl }) => {
         gl.xr.enabled = true;
+        gl.shadowMap.enabled = true;
         gl.setClearColor(0x000000, 0);
         gl.setClearAlpha(0);
         if (typeof gl.xr.setDepthSensing === 'function') {

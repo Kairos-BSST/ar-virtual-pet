@@ -5,9 +5,14 @@ import { usePetStore } from '../../store/petStore';
 import { TAP_DISTANCE, WALK_SPEED, RUN_SPEED } from '../../utils/constants';
 import { damp, distance2d } from '../../utils/math';
 import { createPositionalVoice, playPositional } from '../../services/audioService';
-import { xrRuntime, FOOT_Y_EPSILON } from '../../services/xrRuntime';
+import {
+  xrRuntime,
+  getGroundY,
+  collideWithGround,
+} from '../../services/xrRuntime';
 import DogModel from '../models/Dog';
 import { HeartBurst, EatSparks, Confetti } from '../models/Particles';
+import { GroundContactBlob } from './InvisibleGround';
 
 const SCALE = 1;
 const _world = new THREE.Vector3();
@@ -63,7 +68,7 @@ export default function Companion({ cameraPosRef }) {
     if (!dog || !store.isPlaced) return;
 
     if (store.trackingLost) {
-      applyAnchorPose(dog, rotY.current);
+      applyGroundedPose(dog, rotY.current);
       return;
     }
 
@@ -74,7 +79,7 @@ export default function Companion({ cameraPosRef }) {
 
     if (arActive && xrRuntime.placed) {
       updateAnchoredWalk(store, dt, rotY);
-      applyAnchorPose(dog, rotY.current);
+      applyGroundedPose(dog, rotY.current);
       return;
     }
 
@@ -89,6 +94,7 @@ export default function Companion({ cameraPosRef }) {
         const food = store.placedFoods.find(
           (f) => distance2d(f.position[0], f.position[2], tx, tz) < 0.2,
         );
+        y = collideWithGround(getGroundY());
         store.setPetPose([x, y, z], rotY.current);
         if (food) store.consumeFood(food.instanceId);
         else store.stopMoving();
@@ -98,12 +104,17 @@ export default function Companion({ cameraPosRef }) {
         x += nx * speed * dt;
         z += nz * speed * dt;
         rotY.current = damp(rotY.current, Math.atan2(nx, nz), 8, dt);
+        y = collideWithGround(getGroundY());
         store.setPetPose([x, y, z], rotY.current);
       }
     }
 
-    dog.position.set(store.petPosition[0], store.petPosition[1] + FOOT_Y_EPSILON, store.petPosition[2]);
-    dog.rotation.y = store.petRotationY;
+    dog.position.set(
+      store.petPosition[0],
+      collideWithGround(store.petPosition[1] ?? getGroundY()),
+      store.petPosition[2],
+    );
+    dog.rotation.set(0, store.petRotationY, 0);
     dog.scale.setScalar(SCALE);
   });
 
@@ -133,10 +144,7 @@ export default function Companion({ cameraPosRef }) {
 
   return (
     <group ref={group} scale={SCALE}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[1 / SCALE, 1, 1 / SCALE]}>
-        <circleGeometry args={[0.18, 20]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.28} />
-      </mesh>
+      <GroundContactBlob visible={!arActive} />
       <DogModel animation={animation} happiness={happiness} hunger={hunger} energy={energy} />
       <HeartBurst active={hearts} />
       <EatSparks active={animation === 'eat'} />
@@ -145,15 +153,17 @@ export default function Companion({ cameraPosRef }) {
   );
 }
 
-function applyAnchorPose(dog, yaw) {
+/** Place dog upright on invisible ground — feet touch floor, no plane tilt float. */
+function applyGroundedPose(dog, yaw) {
   xrRuntime.placementMatrix.decompose(_anchorPos, _quat, _scl);
+  const groundY = collideWithGround(xrRuntime.floorY ?? _anchorPos.y);
   dog.position.set(
     _anchorPos.x + xrRuntime.anchorOffset.x,
-    _anchorPos.y + FOOT_Y_EPSILON,
+    groundY,
     _anchorPos.z + xrRuntime.anchorOffset.z,
   );
-  dog.quaternion.copy(_quat);
-  dog.rotateY(yaw);
+  // Stay upright (Google AR animals style) — do not inherit plane tilt
+  dog.rotation.set(0, yaw, 0);
   dog.scale.setScalar(SCALE);
 }
 

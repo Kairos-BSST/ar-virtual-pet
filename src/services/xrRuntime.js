@@ -48,7 +48,19 @@ export const xrRuntime = {
   anchorOffset: new THREE.Vector3(),
   tracking: true,
   placed: false,
+  groundY: 0,
 };
+
+export function getGroundY() {
+  if (xrRuntime.floorY != null) return xrRuntime.floorY;
+  return xrRuntime.groundY ?? 0;
+}
+
+/** Keep a world Y on or above the invisible ground plane. */
+export function collideWithGround(y, clearance = FOOT_Y_EPSILON) {
+  const ground = getGroundY();
+  return Math.max(y, ground + clearance);
+}
 
 export function resetXrRuntime() {
   xrRuntime.hitSource?.cancel?.();
@@ -66,6 +78,7 @@ export function resetXrRuntime() {
   xrRuntime.anchorOffset.set(0, 0, 0);
   xrRuntime.tracking = true;
   xrRuntime.placed = false;
+  xrRuntime.groundY = 0;
   xrRuntime.hitMatrix.identity();
   xrRuntime.placementMatrix.identity();
   xrRuntime.hitPosition.set(0, 0, 0);
