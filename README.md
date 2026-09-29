@@ -135,11 +135,12 @@ npm run preview
 
 ## 👥 Collaborators
 
-Developed by **Team Kairos** to explore the possibilities of Augmented Reality and immersive digital experiences.
+Developed by: 
 - Trisha Deshmukh
 - Bliss Gonsalves
 - Sanika Mane
 - Shravani Joshi
+to explore the possibilities of Augmented Reality and immersive digital experiences.
 
 ---
 
