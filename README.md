@@ -140,6 +140,7 @@ Developed by:
 - Bliss Gonsalves
 - Sanika Mane
 - Shravani Joshi
+  
 to explore the possibilities of Augmented Reality and immersive digital experiences.
 
 ---
