@@ -1,4 +1,4 @@
-# 🐶 Kairos AR Companion
+# 🐶 MAX — Your Pocket-Sized Companion
 
 An Augmented Reality (AR) Virtual Pet application that allows users to place, interact with, and experience a realistic 3D dog companion in the real world using WebXR and Three.js.
 
@@ -140,7 +140,7 @@ Developed by:
 - Bliss Gonsalves
 - Sanika Mane
 - Shravani Joshi
--to explore the possibilities of Augmented Reality and immersive digital experiences.
+to explore the possibilities of Augmented Reality and immersive digital experiences.
 
 ---
 
