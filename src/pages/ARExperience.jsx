@@ -12,7 +12,6 @@ import { requestMotionPermission } from '../hooks/useDeviceOrientation';
 import { usePetStore } from '../store/petStore';
 
 const ARCanvasRoot = lazy(() => import('../components/ar/ARCanvasRoot'));
-
 export default function ARExperience() {
   const [overlayEl, setOverlayEl] = useState(null);
   const [gesturesOn, setGesturesOn] = useState(false);
@@ -22,7 +21,6 @@ export default function ARExperience() {
   const { videoRef, error } = useHandTracking(gesturesOn && !arActive);
   const voice = useVoiceCommands();
   const listening = usePetStore((s) => s.isListening);
-
   return (
     <div
       id="ar-overlay"
